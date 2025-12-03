@@ -1,0 +1,18 @@
+{
+  "name": "@lti-nest/frontend",
+  "version": "0.0.1",
+  "description": "Nuxt.js frontend application",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "start": "node .output/server/index.mjs"
+  },
+  "dependencies": {
+    "nuxt": "^4.2.1"
+  },
+  "devDependencies": {}
+}

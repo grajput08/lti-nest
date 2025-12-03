@@ -1,0 +1,28 @@
+{
+  "name": "lti-nest",
+  "version": "0.0.1",
+  "description": "Monorepo for LTI application with NestJS backend and Nuxt.js frontend",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "backend:dev": "npm run start:dev --workspace=@lti-nest/backend",
+    "backend:build": "npm run build --workspace=@lti-nest/backend",
+    "backend:start": "npm run start --workspace=@lti-nest/backend",
+    "backend:start:prod": "npm run start:prod --workspace=@lti-nest/backend",
+    "frontend:dev": "npm run dev --workspace=@lti-nest/frontend",
+    "frontend:build": "npm run build --workspace=@lti-nest/frontend",
+    "frontend:start": "npm run start --workspace=@lti-nest/frontend",
+    "dev": "npm run backend:dev & npm run frontend:dev",
+    "build": "npm run backend:build && npm run frontend:build",
+    "install:all": "npm install"
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
