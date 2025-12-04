@@ -1,82 +1,75 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { Provider } from 'ltijs';
-import { Application } from 'express';
-import { LtiDatabaseService } from './lti-database.service';
-import { getCanvasPlatformConfig } from './canvas.config';
-import {
-  IdToken,
-  LtiProvider,
-  LtiSetupOptions,
-  LtiDeployOptions,
-  LtiDeployConfig,
-} from './types/ltijs.types';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import Provider from 'ltijs';
+import SequelizeDB from 'ltijs-sequelize';
+import { Request, Response } from 'express';
 
 @Injectable()
-export class LtiService {
+export class LtiService implements OnModuleInit {
   private readonly logger = new Logger(LtiService.name);
-  private ltiProvider: LtiProvider;
+  private lti: typeof Provider;
 
-  constructor(
-    private configService: ConfigService,
-    private ltiDatabaseService: LtiDatabaseService,
-  ) {
-    this.ltiProvider = Provider as unknown as LtiProvider;
-  }
-
-  async initialize(server: unknown): Promise<void> {
-    const db = this.ltiDatabaseService.createDatabasePlugin();
-    const ltiKey = this.configService.get<string>('LTI_KEY') || '';
-    const appUrl = this.configService.get<string>('APP_URL') || '';
-    const nodeEnv = this.configService.get<string>('NODE_ENV') || 'local';
-    const isLocal = nodeEnv === 'local';
-
-    this.logger.log(`Initializing LTI with key: ${ltiKey}`);
-    this.logger.log(`App URL: ${appUrl}`);
-    this.logger.log(`Dev mode: ${isLocal}`);
-
-    const setupOptions: LtiSetupOptions = { plugin: db };
-    const deployOptions: LtiDeployOptions = {
-      appUrl,
-      loginUrl: '/login',
-      cookies: {
-        secure: !isLocal,
-        sameSite: isLocal ? '' : 'None',
-      },
-      devMode: isLocal,
-      tokenMaxAge: 300,
-    };
-
-    await this.ltiProvider.setup(ltiKey, setupOptions, deployOptions);
-
-    this.ltiProvider.onConnect(
-      (token: IdToken, req, res) => {
-        this.logger.log(`LTI Launch successful for user: ${token.user || token.sub}`);
-        res.send('LTI Connection Successful!');
-      },
+  constructor() {
+    const db = new SequelizeDB(
+      process.env.DB_NAME || '',
+      process.env.DB_USER || '',
+      process.env.DB_PASSWORD || '',
       {
-        invalidToken: (req, res): void => {
-          this.logger.warn('Invalid or expired token');
-          const timeoutUrl = this.configService.get<string>('APP_TIMEOUT_URL') || '/';
-          res.redirect(timeoutUrl);
-        },
+        host: process.env.DB_HOST || '',
+        port: Number(process.env.DB_PORT || '5432'),
+        dialect: 'postgres',
+        logging: false,
       },
     );
 
-    const deployConfig: LtiDeployConfig = {
-      server,
-      serverless: true,
-    };
-    await this.ltiProvider.deploy(deployConfig);
-    this.logger.log('LTI deployed successfully');
-
-    const canvasConfig = getCanvasPlatformConfig(this.configService);
-    await this.ltiProvider.registerPlatform(canvasConfig);
-
-    this.logger.log('Platform registered with Canvas');
+    this.lti = new Provider(
+      process.env.LTI_KEY || 'LTI_KEY',
+      {
+        plugin: db,
+      },
+      {
+        appUrl: `${process.env.APP_URL}`,
+        loginUrl: '/login',
+        cookies: {
+          secure: false,
+          sameSite: '',
+        },
+        devMode: true,
+      },
+    );
   }
 
-  getLtiApp(): Application {
-    return this.ltiProvider.app;
+  async onModuleInit() {
+    this.lti.onConnect((token: any, req: Request, res: Response) => {
+      this.logger.log('🔗 LTI Launch Successful:', token);
+      return res.send('LTI Connection Successful!');
+    });
+
+    this.logger.log('🚀 LTI Launch Handler Registered');
+  }
+
+  async deploy(server: any) {
+    await this.lti.deploy({ server, serverless: true });
+    await this.registerCanvas();
+    this.logger.log(`Server running on port ${process.env.PORT || 3000}`);
+  }
+
+  async registerCanvas() {
+    await this.lti.registerPlatform({
+      url: 'https://canvas.instructure.com',
+      name: 'Canvas LMS',
+      clientId: process.env.CANVAS_CLIENT_ID,
+      authenticationEndpoint: `${process.env.CANVAS_URL}/api/lti/authorize_redirect`,
+      accesstokenEndpoint: `${process.env.CANVAS_URL}/login/oauth2/token`,
+      authConfig: {
+        method: 'JWK_SET',
+        key: `${process.env.CANVAS_URL}/api/lti/security/jwks`,
+      },
+    });
+
+    this.logger.log('🎓 Canvas LMS Registered Successfully');
+  }
+
+  getApp() {
+    return this.lti.app;
   }
 }
