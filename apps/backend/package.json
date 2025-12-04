@@ -8,10 +8,10 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start",
-    "start:dev": "nest start --watch",
+    "start": "DEBUG=provider:* nest start --port=8080",
+    "start:dev": "DEBUG=provider:* nest start --watch --port=8080",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start:prod": "node dist/main --port=8080",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -35,6 +35,7 @@
     "@types/node-cron": "^3.0.11",
     "debug": "^4.4.3",
     "ltijs": "^5.9.6",
+    "ltijs-sequelize": "^2.4.4",
     "node-cron": "^4.2.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"

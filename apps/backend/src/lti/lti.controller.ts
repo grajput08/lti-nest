@@ -1,18 +1,20 @@
-import { Controller, Get, Req, Res } from '@nestjs/common';
+import { Controller, All, Req, Res } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { LtiService } from './lti.service';
 
-@Controller('lti')
+@Controller()
 export class LtiController {
   constructor(private readonly ltiService: LtiService) {}
 
-  @Get('*')
+  @All('*')
   handleLtiRoutes(@Req() req: Request, @Res() res: Response) {
-    const app = this.ltiService.getAppInstance() as
-      | ((req: Request, res: Response) => void)
-      | undefined;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const app = this.ltiService.getLtiApp();
     if (app) {
-      return app(req, res);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call
+      return app(req, res, () => {
+        // Next function for Express middleware
+      });
     }
     return res.status(503).send('LTI not initialized');
   }

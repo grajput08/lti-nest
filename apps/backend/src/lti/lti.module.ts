@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { LtiService } from './lti.service';
-import { PrismaModule } from '../prisma/prisma.module';
-import { LTIDatabaseModule } from './lti-database.module';
+import { LtiDatabaseService } from './lti-database.service';
+import { LtiController } from './lti.controller';
 
 @Module({
-  imports: [PrismaModule, LTIDatabaseModule],
-  providers: [LtiService],
+  imports: [ConfigModule.forRoot()],
+  providers: [LtiService, LtiDatabaseService],
+  controllers: [LtiController],
   exports: [LtiService],
 })
 export class LtiModule {}
