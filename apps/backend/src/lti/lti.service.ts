@@ -21,19 +21,31 @@ export class LtiService implements OnModuleInit {
     );
 
     lti.setup(
-      process.env.LTI_KEY || 'LTI_KEY',
+      process.env.LTI_KEY ||
+        'FXA3279DQUwwe7WTr9KwJU3N34zYDvFV9rLG97Eh7MGHewn6HHxQ7rJcDFLDa8Ta',
       {
         plugin: db,
       },
       {
-        appUrl: `${process.env.APP_URL}`,
-        loginUrl: '/login',
+        appRoute: `${process.env.APP_URL}`,
+        loginRoute: '/login',
+        tokenMaxAge: `${process.env.TOKEN_MAX_AGE || 6000}`,
         cookies: {
           secure: false,
           sameSite: '',
         },
         devMode: true,
       },
+    );
+
+    // Allow both GET + POST for login (Canvas uses GET, Moodle uses POST)
+    lti.whitelist(
+      { route: /^\/login$/, method: 'get' },
+      { route: /^\/login$/, method: 'post' },
+    );
+
+    this.logger.log(
+      '✅ LTI Setup Complete - Login route whitelisted for GET and POST',
     );
   }
 
@@ -47,9 +59,10 @@ export class LtiService implements OnModuleInit {
   }
 
   async deploy(server: any) {
+    this.logger.log(`TOKEN_MAX_AGE: ${process.env.TOKEN_MAX_AGE}`);
     await lti.deploy({ server, serverless: true });
     await this.registerCanvas();
-    this.logger.log(`Server running on port ${process.env.PORT || 8080}`);
+    this.logger.log(`Server running on port ${process.env.PORT || 3000}`);
   }
 
   async registerCanvas() {
@@ -69,8 +82,10 @@ export class LtiService implements OnModuleInit {
   }
 
   use(req: Request, res: Response, next: () => void) {
-    this.logger.log(`!!!!!!Signed Cookies [${req.signedCookies}]`);
-    this.logger.log(`LTI middleware running for URL [${req.url}]`);
+    this.logger.log(`🔥 LTI Middleware HIT → ${req.method} ${req.url}`);
+    this.logger.log(`Signed Cookies: [${JSON.stringify(req.signedCookies)}]`);
+    this.logger.log(`Query Params: [${JSON.stringify(req.query)}]`);
+    // Note: Body is not parsed here - ltijs will handle it to avoid stream consumption issues
     lti.app(req, res, next);
   }
 }

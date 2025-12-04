@@ -1,8 +1,9 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppService } from './app.service';
 import { LtiModule } from './lti/lti.module';
 import { AppController } from './app.controller';
+import { LtiMiddleware } from './lti/lti.middleware';
 
 @Module({
   imports: [
@@ -15,4 +16,8 @@ import { AppController } from './app.controller';
   providers: [AppService],
   controllers: [AppController],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LtiMiddleware).forRoutes('*'); // 🔥 Middleware must catch all LTI routes
+  }
+}
