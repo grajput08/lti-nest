@@ -5,7 +5,12 @@ import { LtiDatabaseService } from './lti-database.service';
 import { LtiController } from './lti.controller';
 
 @Module({
-  imports: [ConfigModule.forRoot()],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
+  ],
   providers: [LtiService, LtiDatabaseService],
   controllers: [LtiController],
   exports: [LtiService],

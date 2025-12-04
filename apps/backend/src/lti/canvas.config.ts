@@ -1,13 +1,21 @@
 import { ConfigService } from '@nestjs/config';
+import { PlatformConfig } from './types/ltijs.types';
 
-export const getCanvasPlatformConfig = (configService: ConfigService) => ({
-  url: 'https://canvas.instructure.com',
-  name: 'Canvas LMS',
-  clientId: configService.get<string>('CANVAS_CLIENT_ID'),
-  authenticationEndpoint: `${configService.get<string>('CANVAS_URL')}/api/lti/authorize_redirect`,
-  accesstokenEndpoint: `${configService.get<string>('CANVAS_URL')}/login/oauth2/token`,
-  authConfig: {
-    method: 'JWK_SET',
-    key: `${configService.get<string>('CANVAS_URL')}/api/lti/security/jwks`,
-  },
-});
+export const getCanvasPlatformConfig = (
+  configService: ConfigService,
+): PlatformConfig => {
+  const canvasUrl = configService.get<string>('CANVAS_URL') || 'https://canvas.instructure.com';
+  const clientId = configService.get<string>('CANVAS_CLIENT_ID') || '';
+
+  return {
+    url: 'https://canvas.instructure.com',
+    name: 'Canvas LMS',
+    clientId,
+    authenticationEndpoint: `${canvasUrl}/api/lti/authorize_redirect`,
+    accesstokenEndpoint: `${canvasUrl}/login/oauth2/token`,
+    authConfig: {
+      method: 'JWK_SET',
+      key: `${canvasUrl}/api/lti/security/jwks`,
+    },
+  };
+};
