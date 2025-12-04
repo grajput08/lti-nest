@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppService } from './app.service';
 import { LtiModule } from './lti/lti.module';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -12,5 +13,6 @@ import { LtiModule } from './lti/lti.module';
     LtiModule,
   ],
   providers: [AppService],
+  controllers: [AppController],
 })
 export class AppModule {}

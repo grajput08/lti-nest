@@ -1,12 +1,11 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import Provider from 'ltijs';
+import { Provider as lti } from 'ltijs';
 import SequelizeDB from 'ltijs-sequelize';
 import { Request, Response } from 'express';
 
 @Injectable()
 export class LtiService implements OnModuleInit {
   private readonly logger = new Logger(LtiService.name);
-  private lti: typeof Provider;
 
   constructor() {
     const db = new SequelizeDB(
@@ -21,7 +20,7 @@ export class LtiService implements OnModuleInit {
       },
     );
 
-    this.lti = new Provider(
+    lti.setup(
       process.env.LTI_KEY || 'LTI_KEY',
       {
         plugin: db,
@@ -39,7 +38,7 @@ export class LtiService implements OnModuleInit {
   }
 
   async onModuleInit() {
-    this.lti.onConnect((token: any, req: Request, res: Response) => {
+    lti.onConnect((token: any, req: Request, res: Response) => {
       this.logger.log('🔗 LTI Launch Successful:', token);
       return res.send('LTI Connection Successful!');
     });
@@ -48,13 +47,13 @@ export class LtiService implements OnModuleInit {
   }
 
   async deploy(server: any) {
-    await this.lti.deploy({ server, serverless: true });
+    await lti.deploy({ server, serverless: true });
     await this.registerCanvas();
-    this.logger.log(`Server running on port ${process.env.PORT || 3000}`);
+    this.logger.log(`Server running on port ${process.env.PORT || 8080}`);
   }
 
   async registerCanvas() {
-    await this.lti.registerPlatform({
+    await lti.registerPlatform({
       url: 'https://canvas.instructure.com',
       name: 'Canvas LMS',
       clientId: process.env.CANVAS_CLIENT_ID,
@@ -66,10 +65,12 @@ export class LtiService implements OnModuleInit {
       },
     });
 
-    this.logger.log('🎓 Canvas LMS Registered Successfully');
+    this.logger.log('Canvas LMS Registered Successfully');
   }
 
-  getApp() {
-    return this.lti.app;
+  use(req: Request, res: Response, next: () => void) {
+    this.logger.log(`!!!!!!Signed Cookies [${req.signedCookies}]`);
+    this.logger.log(`LTI middleware running for URL [${req.url}]`);
+    lti.app(req, res, next);
   }
 }

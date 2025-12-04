@@ -10,6 +10,6 @@ async function bootstrap() {
   const ltiService = app.get(LtiService);
   await ltiService.deploy(server);
 
-  await app.listen(process.env.PORT || 3000);
+  await app.listen(process.env.PORT || 8080);
 }
 bootstrap();
