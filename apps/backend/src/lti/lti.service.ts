@@ -22,39 +22,30 @@ export class LtiService implements OnModuleInit {
 
     lti.setup(
       process.env.LTI_KEY ||
-        'FXA3279DQUwwe7WTr9KwJU3N34zYDvFV9rLG97Eh7MGHewn6HHxQ7rJcDFLDa8Ta',
+        'kTwumBZLuhzfTa6YF7VWMfu4GuYk4m9M6PL7VuLB4fCNxLDvxQzEB6cKuexnJz9v',
       {
         plugin: db,
       },
       {
-        appRoute: `${process.env.APP_URL}`,
-        loginRoute: '/login',
-        tokenMaxAge: `${process.env.TOKEN_MAX_AGE || 6000}`,
+        appUrl: `${process.env.APP_URL}`,
+        loginUrl: '/login',
         cookies: {
-          secure: false,
+          secure: true,
           sameSite: '',
         },
         devMode: true,
       },
     );
-
-    // Allow both GET + POST for login (Canvas uses GET, Moodle uses POST)
-    lti.whitelist(
-      { route: /^\/login$/, method: 'get' },
-      { route: /^\/login$/, method: 'post' },
-    );
-
-    this.logger.log(
-      '✅ LTI Setup Complete - Login route whitelisted for GET and POST',
-    );
   }
 
   async onModuleInit() {
     lti.onConnect((token: any, req: Request, res: Response) => {
-      this.logger.log('🔗 LTI Launch Successful:', token);
+      this.logger.log('🔗 LTI Launch Successful');
+      this.logger.log(`User: ${token.user?.name || 'Unknown'}`);
+      this.logger.log(`Platform: ${token.platformContext?.name || 'Unknown'}`);
+      this.logger.log(`Context: ${token.context?.title || 'Unknown'}`);
       return res.send('LTI Connection Successful!');
     });
-
     this.logger.log('🚀 LTI Launch Handler Registered');
   }
 
@@ -83,8 +74,6 @@ export class LtiService implements OnModuleInit {
 
   use(req: Request, res: Response, next: () => void) {
     this.logger.log(`🔥 LTI Middleware HIT → ${req.method} ${req.url}`);
-    this.logger.log(`Signed Cookies: [${JSON.stringify(req.signedCookies)}]`);
-    this.logger.log(`Query Params: [${JSON.stringify(req.query)}]`);
     // Note: Body is not parsed here - ltijs will handle it to avoid stream consumption issues
     lti.app(req, res, next);
   }
